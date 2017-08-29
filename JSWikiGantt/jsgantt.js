@@ -174,7 +174,7 @@ JSGantt.TaskItem = function(pID, pName, pStart, pEnd, pColor, pLink, pMile, pRes
 		var vNameMaxLen = pNameWidth / 7;	// assuming one char is about 6px width
 		if (vName.length > vNameMaxLen)
 		{
-			vName = vName.substr(0,vNameMaxLen-2) + '...';
+			return vName.substr(0,vNameMaxLen-2) + '...';
 		}
 		return vName
 	};
@@ -644,7 +644,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 			// TASKS
 			//
 			for(i = 0; i < vTaskList.length; i++)
-			{
+			{ 
 				if( vTaskList[i].getGroup())
 				{
 					vBGColor = "f3f3f3";
@@ -675,6 +675,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 
 				for(j=1; j<vTaskList[i].getLevel(); j++)
 				{
+                    if (vTaskList[i])
 					vLeftTable += '&nbsp&nbsp&nbsp&nbsp';
 				}
 
@@ -692,15 +693,16 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 					vLeftTable += '<span style="color: #000000; font-weight:bold;">&nbsp&nbsp&nbsp</span>';
 				}
 
-				if (vTaskList[i].getLink().length>0)
-				{
+//				if (vTaskList[i].getLink().length>0)
+//				{
 					//vLeftTable += '<span title="'+ vTaskList[i].getName() +'" onclick=JSGantt.taskLink("' + vTaskList[i].getLink() + '",300,200); style="cursor:pointer"> ' + vTaskList[i].getName() + '</span></NOBR></TD>' ;
-					vLeftTable += ' <span title="'+ vTaskList[i].getName() +'" class="linked_task"><a onclick="JSGantt.taskLink(\'' + vTaskList[i].getLink() + '\',700,600); return false;" href="'+ vTaskList[i].getLink() +'" target="_blank">' + vTaskList[i].getShortName(pNameWidth) + '</a></span></nobr></td>' ;
-				}
-				else
-				{
-					vLeftTable += ' <span title="'+ vTaskList[i].getName() +'">' + vTaskList[i].getShortName(pNameWidth) + '</span></nobr></td>' ;
-				}
+//					vLeftTable += ' <span title="'+ vTaskList[i].getName() +'" class="linked_task"><a onclick="JSGantt.taskLink(\'' + name + '\',700,600); return false;" href="'+ vTaskList[i].getLink() +'" target="_blank">' + vTaskList[i].getShortName(pNameWidth) + '</a></span></nobr></td>' ;
+//				}
+//				else
+//				{
+                console.log(vTaskList[i].getName());
+				vLeftTable += ' <span title="'+ vTaskList[i].getName() +'">' + vTaskList[i].getShortName(pNameWidth) + '</span></nobr></td>' ;
+//				}
 
 				if(vShowRes ==1) vLeftTable += '  <td class="gtaskdesc"><nobr>' + vTaskList[i].getResource() + '</nobr></td>' ;
 				if(vShowDur ==1) vLeftTable += '  <td class="gtaskdesc"><nobr>' + vTaskList[i].getDuration(vFormat) + '</nobr></td>' ;
@@ -709,6 +711,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 				if(vShowEndDate==1) vLeftTable += '  <td class="gtaskdesc"><nobr>' + JSGantt.formatDateStr( vTaskList[i].getEnd(), vDateDisplayFormat) + '</nobr></td>' ;
 
 				vLeftTable += '</TR>';
+                
 			}
 
 			// DRAW the date format selector at bottom left.  Another potential GanttChart parameter to hide/show this selector
@@ -1014,16 +1017,18 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 					}
 
 				}
-			}
+			} 
 
 			vRightTable += vDateRowStr + '</tr>';
 			vRightTable += '</tbody></table>';
 
-			// Draw each row
-
+            // Draw each row
 			for(i = 0; i < vTaskList.length; i++)
 			{
-
+                let name = vTaskList[i].getName();
+                var res = name.replace(/&quot;/g, '');
+                name = res.split(' ').join('+');
+                
 				vTmpDate.setFullYear(vMinDate.getFullYear(), vMinDate.getMonth(), vMinDate.getDate());
 				vTaskStart = vTaskList[i].getStart();
 				vTaskEnd   = vTaskList[i].getEnd();
@@ -1069,7 +1074,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 
 					vRightTable +=
 						'<div id=bardiv_' + vID + ' style="position:absolute; top:0px; left:' + Math.ceil((vTaskLeft * (vDayWidth) - 2)) + 'px; height: 18px; width:15px; overflow:hidden;">' +
-						'  <div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" style="position:relative;left:3px; height: 16px; width:12px; overflow:hidden; cursor: pointer;" onclick=JSGantt.taskLink("' + vTaskList[i].getLink() + '",300,200);>';
+						'  <div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" style="position:relative;left:3px; height: 16px; width:12px; overflow:hidden; cursor: pointer;" onclick=JSGantt.taskLink("' + name + '");>';
 
 					if(vTaskList[i].getCompVal() < 100)
 						vRightTable += '&loz;</div>' ;
@@ -1127,10 +1132,10 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 							'<TR id=childrow_' + vID + ' class=yesdisplay bgColor=#f3f3f3 onMouseover="oJSGant.mouseOver(this,' + vID + ',\'right\',\'group\')" onMouseout="oJSGant.mouseOut(this,' + vID + ',\'right\',\'group\')">' + vItemRowStr + '</TR></TABLE></DIV>';
 						vRightTable +=
 							'<div id=bardiv_' + vID + ' style="position:absolute; top:5px; left:' + Math.ceil(vTaskLeft * (vDayWidth) + 1) + 'px; height: 7px; width:' + Math.ceil((vTaskRight) * (vDayWidth) - 1) + 'px">' +
-								'<div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" class=gtask style="background-color:#000000; height: 7px; width:' + Math.ceil((vTaskRight) * (vDayWidth) -1) + 'px;  cursor: pointer;opacity:0.9;">' +
-									'<div style="Z-INDEX: -4; float:left; background-color:#666666; height:3px; overflow: hidden; margin-top:1px; ' +
+								'<div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" class=gtask style="background-color:#000000; height: 7px; width:' + Math.ceil((vTaskRight) * (vDayWidth) -1) + 'px;  cursor: pointer;opacity:0.9;" onclick=JSGantt.taskLink("' + name + '"); >' +
+									'<div style="Z-INDEX: -4; float:left; background-color:#fff; height:3px; overflow: hidden; margin-top:1px; ' +
 										'margin-left:1px; margin-right:1px; filter: alpha(opacity=80); opacity:0.8; width:' + vTaskList[i].getCompStr() + '; ' + 
-										'cursor: pointer;" onclick=JSGantt.taskLink("' + vTaskList[i].getLink() + '",300,200);>' +
+										'cursor: pointer;" >' +
 									'</div>' +
 								'</div>' +
 								'<div style="Z-INDEX: -4; float:left; background-color:#000000; height:4px; overflow: hidden; width:1px;"></div>' +
@@ -1161,6 +1166,8 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 					}
 					else
 					{
+                        
+                        
 						if (!isDuplicateTaskToBeMovedUp)
 						{
 							vDivStr = '<DIV><TABLE style="position:relative; top:0px; width: ' + vChartWidth + 'px;">' +
@@ -1172,7 +1179,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 						vRightTable +=
 							'<div id=bardiv_' + vID + ' style="position:absolute; top:4px; left:' + Math.ceil(vTaskLeft * (vDayWidth) + 1) + 'px; width:' + Math.ceil((vTaskRight) * (vDayWidth) - 1) + 'px">' +
 								'<div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" class=gtask style="background-color:#' + vTaskList[i].getColor() +'; height: 13px; width:' + Math.ceil((vTaskRight) * (vDayWidth) - 1) + 'px; cursor: pointer;opacity:0.9;" ' +
-									'onclick=JSGantt.taskLink("' + vTaskList[i].getLink() + '",300,200); >' +
+									'onclick=JSGantt.taskLink("' + name + '"); >' +
 									'<div class=gcomplete style="Z-INDEX: -4; float:left; background-color:black; height:5px; overflow: auto; margin-top:4px; filter: alpha(opacity=40); opacity:0.4; width:' + vTaskList[i].getCompStr() + '; overflow:hidden">' +
 									'</div>' +
 								'</div>'
@@ -1629,12 +1636,16 @@ JSGantt.show =  function (pID, pTop, ganttObj)
 
 // function to open window to display task link
 
-JSGantt.taskLink = function(pRef,pWidth,pHeight) 
+JSGantt.taskLink = function(pName) 
 {
-	if(pWidth)  vWidth =pWidth;  else vWidth =400;
-	if(pHeight) vHeight=pHeight; else vHeight=400;
+	//if(pWidth)  vWidth =pWidth;  else vWidth =400;
+	//if(pHeight) vHeight=pHeight; else vHeight=400;
 
-	var OpenWindow=window.open(pRef, "newwin", "height="+vHeight+",width="+vWidth);
+	//var OpenWindow=window.open(pRef, "newwin", "height="+vHeight+",width="+vWidth);
+    //window.attachEvent('onload', oJobSchEd.startEditor());
+	var OpenWindow=window.open('/mediawiki/index.php?title='+wgTitle+'&action=edit#openTask='+pName+'', "_self");
+    //OpenWindow.focus();
+    //$(OpenWindow.document).onload(oJobSchEd.startEditor())
 }
 
 JSGantt.parseDateStr = function(pDateStr,pFormatStr)

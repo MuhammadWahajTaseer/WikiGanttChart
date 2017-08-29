@@ -1,6 +1,5 @@
 window.onload = function () {
 
-    "use strict";
 
     Array.prototype.last = function () {
         return this[this.length - 1];
@@ -423,8 +422,6 @@ window.onload = function () {
             {
                 return false;
             }
-            console.log(oTask)
-            //this.addTask (oTask);
             this.arrTasks.push(oTask);
         }
         return true;
@@ -435,7 +432,6 @@ window.onload = function () {
     \* ------------------------------------------------------------------------ */
     oJobSchEd.preParseTask = function(nodeTask)
     {
-        console.log(nodeTask)
         let oTask = new Object();
         let strDateStart, intDur, strDateEnd, strColor, strResources, intComp, boolGroup, intParent, intDepend, boolMile;
 
@@ -487,7 +483,7 @@ window.onload = function () {
         try{boolMile = parseInt(nodeTask.getElementsByTagName('pMile')[0].textContent);} catch(e){} 
         finally{oTask.boolMile = (boolMile) ? true : false;}
 
-        console.log("start: "+ strDateStart + " end: "+strDateEnd + " color: " + strColor + " resources: " + strResources + " parent: " + intParent + " pMile: " + boolMile + "intDur: "+ intDur);	
+        //console.log("start: "+ strDateStart + " end: "+strDateEnd + " color: " + strColor + " resources: " + strResources + " parent: " + intParent + " pMile: " + boolMile + "intDur: "+ intDur);	
     //	catch (e){
     //		jsAlert(this.lang["gantt parse error - at task"]
     //			.replace(/%pID%/g, oTask.intId)
@@ -498,9 +494,32 @@ window.onload = function () {
 
         return oTask;
     }
-
+    
     oJobSchEd.getContents = function ()
     {
+       /** let request = $.ajax({
+            url: mw.util.wikiScript('api'),
+            type: 'get',
+            data: { action:'parse', prop: 'text',page: 'Test', contentmodel: 'wikitext', format:'json' },
+            dataType: 'json'
+        });
+        
+        // Callback handler that will be called on success
+        request.done(function (response, textStatus, jqXHR){
+            console.log("Hooray, it worked!");
+            console.log(response);
+        });
+        
+        // Callback handler that will be called on failure
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            // Log the error to the console
+            console.error(
+                "The following error occurred: "+
+                textStatus, errorThrown
+            );
+        }); */
+        
+        //this.elEditArea = document.getElementById('wpTextbox1');
         this.elEditArea = document.getElementById('wpTextbox1');
         let el = this.elEditArea;
         let m = el.value.match(this.conf.reGantMatch);
@@ -579,9 +598,6 @@ window.onload = function () {
 
         return strWikiCode;
     }
-
-
-
 
 
 
@@ -800,8 +816,11 @@ window.onload = function () {
                 break;
             }
         }
-        console.log('old')
-        console.log(oJobSchEd.oNewTask)
+        
+        //DEBUG
+        //console.log('old')
+        //console.log(oJobSchEd.oNewTask)
+        
         let arrFields = this.getArrFields('oJobSchEd.oNewTask');
         let strHTML = this.oParent.createForm(arrFields, this.oParent.lang['header - edit']);
 
@@ -856,8 +875,8 @@ window.onload = function () {
     oJobSchEd.oModTask.preSubmitTask = function(oP){
 
         /*Debug*/
-        console.log("New task:");
-        console.log(oP.oNewTask);
+        //console.log("New task:");
+        //console.log(oP.oNewTask);
 
         /* Parse all integers */    
         oP.oNewTask.intComp = (!isNaN(oP.oNewTask.intComp) && (oP.oNewTask.intComp != null)) ? (parseInt(oP.oNewTask.intComp))       : NaN;
@@ -872,7 +891,7 @@ window.onload = function () {
         }
         /* Check date format */
         else if (!this.isDateFormatCorrect(oP.oNewTask.strDateStart)) {
-            jsAlert("Please enter the date in 'YYYY-MM-DD' format");
+            jsAlert("Please enter the date in 'YYYY-MM-DD' format and make sure it's within bounds");
             return false;
         }
         /* Check duration */
@@ -894,7 +913,6 @@ window.onload = function () {
             oP.oNewTask.intComp         = null;
         }
 
-        console.log(oP.oNewTask);
         /* Check for hidden fields and set values accordingly */
         if (oP.oNewTask.boolMile){
             oP.oNewTask.strDateEnd      = oP.oNewTask.strDateStart;
@@ -1412,7 +1430,7 @@ window.onload = function () {
     /* ------------------------------------------------------------------------ *\
         INIT 	
     \* ------------------------------------------------------------------------ */
-    oJobSchEd.init = function ()
+    oJobSchEd.init = function (openTask)
     {
         if (this.conf.strLang in this.lang)
         {
@@ -1462,7 +1480,7 @@ window.onload = function () {
         // Tasks of a person list
         var msg = new sftJSmsg();
         msg.repositionMsgCenter();
-        msg.styleWidth = 500;
+        msg.styleWidth = 1000;
         msg.styleZbase += 20;
         msg.showCancel = false;
         msg.lang['OK'] = this.lang["close button label"];
@@ -1471,25 +1489,52 @@ window.onload = function () {
         this.oListAct.oParent = this;
 
         // Autoedit
-        if (location.href.search(/[&?]jsganttautoedit=1/)>=0)
-        {
+        
+        if (location.href.search(/[&?]jsganttautoedit=1/)>=0){
             this.startEditor();
         }
 
+        // If the task was clicked on the Gantt chart
+        if (openTask) {
+            this.startEditor();
+            
+            // Find the task requested
+            let i = 0, taskRequested;
+            for (i; i < this.arrTasks.length; i++) {
+                let iTaskName = this.arrTasks[i].strName;
+                if (iTaskName.replace(/"/g, '') === openTask){
+                    taskRequested = this.arrTasks[i];
+                    debugger;
+                    break;
+                }
+            }
+            
+            // if found then display it
+            if (taskRequested) {
+                this.oModTask.showEdit(taskRequested.intId);
+            }
+            else {
+                alert("Task not found...");
+            }
+        }
     }
-
-
-
 
 
 
     /* ------------------------------------------------------------------------ *\
         Start	
     \* ------------------------------------------------------------------------ */
-
-    if (mw.config.values.wgAction=="edit" || mw.config.values.wgAction=="submit")
-    {
-    //	addOnloadHook(function () {oJobSchEd.init()});
+    if (window.location.href.indexOf('openTask') > -1) {
+        let taskName = window.location.href.split('openTask=')[1];
+        openTask = taskName.replace(/\+/g, ' ');
+        console.log('Open this task: ' + openTask);
+        addOnloadHook(function () {oJobSchEd.init()});
+        oJobSchEd.init(openTask);
+        
+    }
+    
+    else if (mw.config.values.wgAction=="edit" || mw.config.values.wgAction=="submit") {
+    	addOnloadHook(function () {oJobSchEd.init()});
         oJobSchEd.init();
     }
 

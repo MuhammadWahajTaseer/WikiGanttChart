@@ -39,7 +39,7 @@ function sftJSmsg()
 	// lang
 	this.lang = {
 		'OK' : 'OK',
-		'Cancel' : 'Anuluj'
+		'Cancel' : 'Cancel'
 	};
 
 	// elements on this list will be hidden when the message is displayed
