@@ -142,6 +142,7 @@ JSGantt.isIE = function () {
 
 JSGantt.TaskItem = function(pID, pName, pStart, pEnd, pColor, pLink, pMile, pRes, pComp, pGroup, pParent, pOpen, pDepend, pCaption)
 {
+    console.log(pName);
 	var vID    = pID;
 	var vName  = pName;
 	var vStart = new Date();	
@@ -700,7 +701,6 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 //				}
 //				else
 //				{
-                console.log(vTaskList[i].getName());
 				vLeftTable += ' <span title="'+ vTaskList[i].getName() +'">' + vTaskList[i].getShortName(pNameWidth) + '</span></nobr></td>' ;
 //				}
 
@@ -1758,7 +1758,9 @@ JSGantt.AddXMLTask = function(pGanttVar)
 			
 			
 			// Finally add the task
-			pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID , pName, pStart, pEnd, pColor,  pLink, pMile, pRes,  pComp, pGroup, pParent, pOpen, pDepend,pCaption));
+            var nameEscaped = pName.replace(/'/g, '\'');
+            
+			pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID , nameEscaped, pStart, pEnd, pColor,  pLink, pMile, pRes,  pComp, pGroup, pParent, pOpen, pDepend,pCaption));
 		}
 	}
 }
@@ -1837,7 +1839,8 @@ JSGantt.ChromeXMLParse = function (pGanttVar)
 			if(te.length> 2){var pCaption=te[1];} else {var pCaption = "";}
 			
 			// Finally add the task
-			pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID , pName, pStart, pEnd, pColor,  pLink, pMile, pRes,  pComp, pGroup, pParent, pOpen, pDepend,pCaption 	));
+            var nameEscaped = pName.replace(/'/g, '\'');
+			pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID , nameEscaped, pStart, pEnd, pColor,  pLink, pMile, pRes,  pComp, pGroup, pParent, pOpen, pDepend,pCaption 	));
 		}
 	}
 }

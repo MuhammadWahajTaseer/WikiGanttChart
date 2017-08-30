@@ -469,7 +469,7 @@ window.onload = function () {
         finally{if (strResources){ oTask.strResources= strResources;}}
 
         try{intComp = parseInt(nodeTask.getElementsByTagName('pComp')[0].textContent);} catch(e){} 
-        finally{if (intComp){ oTask.intComp = intComp;}}
+        finally{if (intComp || intComp == 0){ oTask.intComp = intComp;}}
 
         try{boolGroup = nodeTask.getElementsByTagName('pGroup')[0].textContent;} catch(e){}
         finally{oTask.boolGroup = (boolGroup) ? true : false;}
@@ -560,18 +560,18 @@ window.onload = function () {
         let pDateStart = (oTask.strDateStart) 	? '\n\t<pStart>'+oTask.strDateStart+'</pStart>' : '';
         let pDateEnd = (oTask.strDateEnd) 	? '\n\t<pEnd>'+oTask.strDateEnd+'</pEnd>' : '';
         let pDur = (oTask.intDur)		? '\n\t<pDur>'+oTask.intDur+'</pDur>' : '';
-        let pRes =  (oTask.strResources) 	? '\n\t<pRes>'+oTask.strResources+'</pRes>' : '';
-        let pComp = (oTask.intComp) 		? '\n\t<pComp>'+oTask.intComp+'</pComp>' : '';	
+        let pRes =  (oTask.strResources) 	? '\n\t<pRes>'+this.encodeHTML(oTask.strResources)+'</pRes>' : '';
+        let pComp = (oTask.intComp !== null) 		? '\n\t<pComp>'+oTask.intComp+'</pComp>' : '';	
         let pGroup = (oTask.boolGroup) 		? '\n\t<pGroup>1</pGroup>' : '';	
         let pParent = (oTask.intParent) 	? '\n\t<pParent>'+oTask.intParent+'</pParent>' : '';
         let pDepend = (oTask.intDepend) 	? '\n\t<pDepend>'+oTask.intDepend+'</pDepend>' : '';
         let pMile = (oTask.boolMile)		? '\n\t<pMile>1</pMile>' : '';	
-
+        
         try
         {
             strWikiCode = '\n<task>'
                 +'\n\t<pID>'+oTask.intId+'</pID>'
-                +'\n\t<pName>'+oTask.strName+'</pName>'
+                +'\n\t<pName>'+this.encodeHTML(oTask.strName)+'</pName>'
                 +'\n\t<pColor>'+oTask.strColor+'</pColor>'
                 + pDateStart
                 + pDateEnd
@@ -821,6 +821,9 @@ window.onload = function () {
         //console.log('old')
         //console.log(oJobSchEd.oNewTask)
         
+        /* Escape double quotes */
+        this.oParent.oNewTask.strName = this.oParent.oNewTask.strName.replace(/"/g, '\\"');
+        
         let arrFields = this.getArrFields('oJobSchEd.oNewTask');
         let strHTML = this.oParent.createForm(arrFields, this.oParent.lang['header - edit']);
 
@@ -873,66 +876,69 @@ window.onload = function () {
         Pre configure before submiting a task  	
     \* ------------------------------------------------------------------------ */
     oJobSchEd.oModTask.preSubmitTask = function(oP){
-
+        let task = oP.oNewTask;
         /*Debug*/
         //console.log("New task:");
         //console.log(oP.oNewTask);
 
         /* Parse all integers */    
-        oP.oNewTask.intComp = (!isNaN(oP.oNewTask.intComp) && (oP.oNewTask.intComp != null)) ? (parseInt(oP.oNewTask.intComp))       : NaN;
-        oP.oNewTask.intParent = (!isNaN(oP.oNewTask.intParent) && (oP.oNewTask.intParent != null)) ? (parseInt(oP.oNewTask.intParent))     : NaN;
-        oP.oNewTask.intDepend = (!isNaN(oP.oNewTask.intDepend) && (oP.oNewTask.intDepend != null)) ? (parseInt(oP.oNewTask.intDepend))     : NaN;
-        oP.oNewTask.intDur = (!isNaN(oP.oNewTask.intDur) && (oP.oNewTask.intDur != null)) ? (parseInt(oP.oNewTask.intDur))      : NaN;
+        task.intComp = (!isNaN(task.intComp) && (task.intComp != null)) ? (parseInt(task.intComp))       : NaN;
+        task.intParent = (!isNaN(task.intParent) && (task.intParent != null)) ? (parseInt(task.intParent))     : NaN;
+        task.intDepend = (!isNaN(task.intDepend) && (task.intDepend != null)) ? (parseInt(task.intDepend))     : NaN;
+        task.intDur = (!isNaN(task.intDur) && (task.intDur != null)) ? (parseInt(task.intDur))      : NaN;
         
         /* Check for empty string for name */
-        if (!oP.oNewTask.strName) {
+        if (!task.strName) {
             jsAlert("Task must have a name!");
             return false;
         }
         /* Check date format */
-        else if (!this.isDateFormatCorrect(oP.oNewTask.strDateStart)) {
+        else if ((!this.isDateFormatCorrect(task.strDateStart)) && (!task.boolGroup)) {
             jsAlert("Please enter the date in 'YYYY-MM-DD' format and make sure it's within bounds");
             return false;
         }
         /* Check duration */
-        else if (isNaN(oP.oNewTask.intDur) || oP.oNewTask.intDur < 1) {
+        else if ((isNaN(task.intDur) || task.intDur < 1) && (!task.boolMile && !task.boolGroup)) {
             jsAlert("Duration must be a positive integer");
             return false;
         }
         /* Check for % complete*/
-        else if (isNaN(oP.oNewTask.intComp) || oP.oNewTask.intComp < 0) {
+        else if ((isNaN(task.intComp) || task.intComp < 0) && (!task.boolMile && !task.boolGroup)) {
             jsAlert("Percent Complete must be a non-negative integer");
             return false;
         }
 
         /* Check for hidden fields and set values accordingly */
-        if (oP.oNewTask.boolGroup){
-            oP.oNewTask.strDateStart    = null;
-            oP.oNewTask.strDateEnd      = null;
-            oP.oNewTask.intDur          = null;
-            oP.oNewTask.intComp         = null;
+        if (task.boolGroup){
+            task.strDateStart    = null;
+            task.strDateEnd      = null;
+            task.intDur          = null;
+            task.intComp         = null;
         }
 
         /* Check for hidden fields and set values accordingly */
-        if (oP.oNewTask.boolMile){
-            oP.oNewTask.strDateEnd      = oP.oNewTask.strDateStart;
-            oP.oNewTask.intDur          = 1;
-            oP.oNewTask.strResources    = null;
-            oP.oNewTask.intComp         = null;
-            oP.oNewTask.boolGroup       = null;
-            oP.oNewTask.intParent       = null;
-            oP.oNewTask.intDepend       = null;
+        if (task.boolMile){
+            task.strDateEnd      = task.strDateStart;
+            task.intDur          = 1;
+            task.strResources    = null;
+            task.intComp         = null;
+            task.boolGroup       = null;
+            task.intParent       = null;
         }
-
-
+        
+        /* Replace double quotes with single quotes: "" causes issues with sftJSmsg.js */
+        task.strName = task.strName.replace(/"/g, "'");
+        
         /* Calculate and set end date if start date and duration is available */
-        if (oP.oNewTask.strDateStart && (oP.oNewTask.intDur > 0 )){
-            oP.oNewTask.strDateEnd = this.addBusinessDays(oP.oNewTask.strDateStart, (oP.oNewTask.intDur-1));	
+        if (task.strDateStart && (task.intDur > 0 )){
+            task.strDateEnd = this.addBusinessDays(task.strDateStart, (task.intDur-1));	
         }
-        else if(oP.oNewTask.boolGroup === false && oP.oNewTask.boolMile === false){
+        else if(task.boolGroup === false && task.boolMile === false){
             jsAlert("\"Number of days\" must be a positive integer greater than 0");
+            task = null;
             return false;
         }
+        task = null;
         return true;
     }
 
@@ -1052,8 +1058,7 @@ window.onload = function () {
 
             {type: 'select', title: 'Depends on', lbls: this.arrTaskLbls
                 , value: this.oParent.oNewTask.intDepend
-                , jsUpdate:strNewTaskObject+'.intDepend = this.value'
-                , className: "toggle_visibility_mile" },
+                , jsUpdate:strNewTaskObject+'.intDepend = this.value' },
 
             {type: 'checkbox', title: 'Milestone', name:'milestone'
                 , value: checkboxValueMilestone }
@@ -1181,7 +1186,7 @@ window.onload = function () {
             
                 
             /* if it's the last task OR (previous task is not the parent AND (Previous task doesn't have the same parent OR previous task is the desired parent)) */
-            if (!(task_next)  ||  ((task_prev && task_prev.intId != task_curr.intParent)) ) { // && (task_prev.intParent !== task_curr.intParent || task_prev.intId === oNewTask.intParent) )) {
+            if (!(task_next)  ||  ((task_prev && task_prev.intId != task_curr.intParent)) ) { 
                 
                 /* Keep removing from stack until either (the last element is the parent of current task or stack is empty) */
                 while (stack.last() != task_curr.intParent) {
@@ -1213,8 +1218,22 @@ window.onload = function () {
         }
     }
 
-
-
+    
+    /* ------------------------------------------------------------------------ *\
+        Escapes the strings with proper sequences
+    \* ------------------------------------------------------------------------ */
+    oJobSchEd.encodeHTML = function (st) {
+            if (st) {
+                return st.replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;')
+               .replace(/"/g, '&quot;')
+               .replace(/'/g, '&apos;');
+            }
+            else {
+                return ''
+            }
+    };
 
 
 
