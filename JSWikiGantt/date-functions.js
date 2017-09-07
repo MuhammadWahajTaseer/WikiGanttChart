@@ -450,7 +450,7 @@ Date.patterns = {
     UniversalSortableDateTimePattern: "Y-m-d H:i:sO",
     YearMonthPattern: "F, Y"};
 
-/*
+
 // i18n
 Date.monthNames =
    ["January",
@@ -486,4 +486,3 @@ Date.dayNames =
     "Thursday",
     "Friday",
     "Saturday"];
-*/

@@ -18,11 +18,13 @@ window.onload = function () {
         ,strFormat : 'Y-m-d'
         ,reGantMatch : /(<jsgantt[^>]*>)([\s\S]*)(<\/jsgantt>)/
         ,isActivitiesIdentfiedByName : true
-
-
-        ,"img - edit" : 'extensions/JobSchEd/img/edit.png'
-        ,"img - list" : 'extensions/JobSchEd/img/list.png'
-        ,"img - del"  : 'extensions/JobSchEd/img/del.png'
+        
+        ,currentColor : '8CB6CE' //dynamically changed
+        ,defaultChecked : false //dynamically changed
+        ,defaultColor: '8CB6CE' //dynamically changed
+        ,"img - edit" : ''
+        ,"img - list" : 'extensions/JobSchEd/img/list.png' //Icon made by  from www.flaticon.com 
+        ,"img - del"  : 'extensions/JobSchEd/img/x.png'
     }
 
     oJobSchEd.lang = {"":""
@@ -312,13 +314,16 @@ window.onload = function () {
             {
                 default:
                 case 'text':
+                    var strInpId = oF.id ? oF.id : '';
                     var strExtra = '';
                     strExtra += oF.jsUpdate ? ' onchange="'+oF.jsUpdate+'" ' : '';
                     strExtra += oF.maxlen ? ' maxlength="'+oF.maxlen+'" ' : '';
                     strExtra += oF.maxlen ? ' style="width:'+(oF.maxlen*8)+'px" ' : '';
+                    
+                    oF.type = oF.type ? oF.type : '';                    
                     strRet += '<p class="'+ className  +'" >'
                         +'<label style="display:inline-block;width:120px;text-align:right;">'+oF.lbl+':</label>'
-                        +' <input  type="'+oF.type+'" name="'+oF.name+'" value="'+oF.value+'" '+strExtra+' />'
+                        +' <input  id="'+ strInpId +'" class="'+ oF.inputClass +'" type="'+oF.type+'" name="'+oF.name+'" value="'+oF.value+'" '+strExtra+' />'
                         +'</p>'
                     ;
                 break;
@@ -375,13 +380,21 @@ window.onload = function () {
                         var strSubExtra ='';
                         strSubExtra += oF.value==oFL.value ? ' selected="selected" ' : '';
                         strRet += ''
-                            +'<option value="'+oFL.value+'" '+strSubExtra+'>'+oFL.lbl+'</option>'
-                        ;
+                            +'<option value="'+oFL.value+'" '+strSubExtra+'>'+oFL.lbl+'</option>';
                     }
                     strRet += '</select></p>';
                 break;
+                case 'default_color_inputs':
+                    strRet += '<p class="'+ oF.className +'" style="margin-left:20px;">'
+                    + 'Save as Default: <input id="default_color" type="checkbox" onclick=oJobSchEd.oModTask.toggleChecked("default_color")"/>'
+                    +  '<button style="margin-left:52px;" type="button" onclick="oJobSchEd.oModTask.makeDefaultColor()">Make Default!</button>';
+                    + '</p>'
+                    
+                    
+                break;
             }
         }
+        
         strRet += ''
             + '</div>'
         ;
@@ -469,7 +482,8 @@ window.onload = function () {
         finally{if (strResources){ oTask.strResources= strResources;}}
 
         try{intComp = parseInt(nodeTask.getElementsByTagName('pComp')[0].textContent);} catch(e){} 
-        finally{if (intComp || intComp == 0){ oTask.intComp = intComp;}}
+        finally{if (intComp){ oTask.intComp = intComp;}
+                else{ oTask.intComp = 0;}}
 
         try{boolGroup = nodeTask.getElementsByTagName('pGroup')[0].textContent;} catch(e){}
         finally{oTask.boolGroup = (boolGroup) ? true : false;}
@@ -752,7 +766,7 @@ window.onload = function () {
             strName : '',
             strDateStart : now.dateFormat(this.oParent.conf.strFormat),
             strDateEnd : now.dateFormat(this.oParent.conf.strFormat),
-            strColor : '8cb6ce',
+            strColor : oP.conf.defaultColor,
             strResources : '',
             intComp : 0,
             boolGroup : false,
@@ -768,6 +782,10 @@ window.onload = function () {
         var msg = this.oMsg;
         msg.show(strHTML, 'oJobSchEd.oModTask.submitAdd()');
         msg.repositionMsgCenter();
+        $(document).ready(function() {
+            jscolor.installByClassName("jscolor");
+        });
+        
     }
 
     /* ------------------------------------------------------------------------ *\
@@ -782,7 +800,7 @@ window.onload = function () {
         }
 
         /* Add in new task */
-        this.insertTask();
+        this.insertTask(null, null);
         oP.oNewTask = null;
 
         this.submitCommon();
@@ -826,10 +844,11 @@ window.onload = function () {
         
         let arrFields = this.getArrFields('oJobSchEd.oNewTask');
         let strHTML = this.oParent.createForm(arrFields, this.oParent.lang['header - edit']);
-
+            
 
         let msg = this.oMsg;
-        msg.show(strHTML, 'oJobSchEd.oModTask.submitEdit('+i+')');
+        this.oParent.oNewTask.intParent = (this.oParent.oNewTask.intParent) ? this.oParent.oNewTask.intParent : null;
+        msg.show(strHTML, 'oJobSchEd.oModTask.submitEdit('+i+', '+ this.oParent.oNewTask.intParent+')');
         msg.repositionMsgCenter();
 
         /* If group is checked then hide the related fields */
@@ -837,7 +856,7 @@ window.onload = function () {
             let related_fields = document.getElementsByClassName("toggle_visibility_group");
             let i;
             for(i = 0; i < related_fields.length; i++){
-                related_fields[i].style.visibility = "hidden";
+                related_fields[i].style.display = "none";
             }
         }
         /* If group is checked then hide the related fields */
@@ -845,9 +864,15 @@ window.onload = function () {
             let related_fields = document.getElementsByClassName("toggle_visibility_mile");
             let i;
             for(i = 0; i < related_fields.length; i++){
-                related_fields[i].style.visibility = "hidden";
+                related_fields[i].style.display = "none";
             }
         }
+        $(document).ready(function() {
+            jscolor.installByClassName("jscolor");
+        });
+        
+        /* bootstrap-colorpicker activate */
+        //$('#cp1').colorpicker();
 
     }
 
@@ -855,7 +880,7 @@ window.onload = function () {
         Assigns the new task object in the array at the specified index		
     \* ------------------------------------------------------------------------ */
 
-    oJobSchEd.oModTask.submitEdit = function(taskIndex){
+    oJobSchEd.oModTask.submitEdit = function(taskIndex, intParentOld){
 
         let oP = this.oParent;
         if (!(this.preSubmitTask(oP))){
@@ -866,7 +891,7 @@ window.onload = function () {
         oP.arrTasks.splice(taskIndex, 1);
 
         /* Add in edited task */
-        this.insertTask(taskIndex);
+        this.insertTask(taskIndex, intParentOld);
         oP.oNewTask = null;
 
         this.submitCommon();
@@ -914,6 +939,7 @@ window.onload = function () {
             task.strDateEnd      = null;
             task.intDur          = null;
             task.intComp         = null;
+            task.intColor        = null;
         }
 
         /* Check for hidden fields and set values accordingly */
@@ -921,13 +947,21 @@ window.onload = function () {
             task.strDateEnd      = task.strDateStart;
             task.intDur          = 1;
             task.strResources    = null;
-            task.intComp         = null;
             task.boolGroup       = null;
-            task.intParent       = null;
+            task.intColor        = null;
         }
+        
+        /* Deal with parents */
+        task.intParent = (task.intParent) ? task.intParent : null;
         
         /* Replace double quotes with single quotes: "" causes issues with sftJSmsg.js */
         task.strName = task.strName.replace(/"/g, "'");
+        
+        /* If set default color was checked then change the default color, and uncheck it in conf */
+        if (oJobSchEd.conf.defaultChecked) {
+            oJobSchEd.conf.defaultColor = oJobSchEd.conf.currentColor;
+        }
+        oJobSchEd.conf.defaultChecked = false;
         
         /* Calculate and set end date if start date and duration is available */
         if (task.strDateStart && (task.intDur > 0 )){
@@ -938,6 +972,7 @@ window.onload = function () {
             task = null;
             return false;
         }
+        
         task = null;
         return true;
     }
@@ -1021,7 +1056,6 @@ window.onload = function () {
         checkboxValueGroup = (this.oParent.oNewTask.boolGroup) ? "checked" : '';
         checkboxValueMilestone = (this.oParent.oNewTask.boolMile) ? "checked" : '';
 
-
         return [
             {type:'text',  lbl: 'Title' 
                 , value: this.oParent.oNewTask.strName 
@@ -1045,7 +1079,7 @@ window.onload = function () {
             {type: 'text', maxlen: 3, lbl: 'Complete(%)'
                 , value: this.oParent.oNewTask.intComp
                 , jsUpdate:strNewTaskObject+'.intComp = this.value' 
-                , className: "toggle_visibility_group toggle_visibility_mile" },
+                , className: "toggle_visibility_group" },
 
             {type: 'checkbox', title: 'Group object', name:'group'
                 , value: checkboxValueGroup
@@ -1053,17 +1087,26 @@ window.onload = function () {
 
             {type: 'select', title: 'Parent', lbls: this.arrTaskLblsGroup
                 , value: this.oParent.oNewTask.intParent
-                , jsUpdate:strNewTaskObject+'.intParent = this.value'
-                , className: "toggle_visibility_mile" },
+                , jsUpdate:strNewTaskObject+'.intParent = this.value' },
 
             {type: 'select', title: 'Depends on', lbls: this.arrTaskLbls
                 , value: this.oParent.oNewTask.intDepend
                 , jsUpdate:strNewTaskObject+'.intDepend = this.value' },
 
             {type: 'checkbox', title: 'Milestone', name:'milestone'
-                , value: checkboxValueMilestone }
-
+                , className: "toggle_visibility_group"
+                , value: checkboxValueMilestone },
+            
+            {type: 'text', lbl: 'Color'
+                , value: this.oParent.oNewTask.strColor
+                , jsUpdate:strNewTaskObject+'.strColor = this.value'
+                , className: "input_color toggle_visibility_group toggle_visibility_mile"
+                , inputClass: "jscolor"
+                , id: "input_color"},
+            {type: 'default_color_inputs'
+                , className: "toggle_visibility_group toggle_visibility_mile" }
         ];
+        
     }
 
     /* ------------------------------------------------------------------------ *\
@@ -1108,11 +1151,20 @@ window.onload = function () {
             this.oParent.oNewTask.boolMile = checked;
             this.updateFieldsVisibility("toggle_visibility_mile", checked);
         }
+        else if (id === "default_color") {
+            if (checked) {
+                oJobSchEd.conf.currentColor = $("#input_color")[0].value;
+                oJobSchEd.conf.defaultChecked = true;
+            }
+            else {
+                oJobSchEd.conf.defaultChecked = false;
+            }
+        }
 
     }
-
+    
     /* ------------------------------------------------------------------------ *\
-        Helper function deals with setting visibility of related fields
+        Helper function deals with setting display of related fields
     \* ------------------------------------------------------------------------ */
     oJobSchEd.oModTask.updateFieldsVisibility = function(className, checked){
 
@@ -1122,20 +1174,20 @@ window.onload = function () {
         if (checked){
             let i;
             for(i = 0; i < related_fields.length; i++){
-                related_fields[i].style.visibility = "hidden";
+                related_fields[i].style.display = "none";
             }
         }
         else {
             let i;
             for(i = 0; i < related_fields.length; i++){
-                related_fields[i].style.visibility = "visible";
+                related_fields[i].style.display = "block";
             }
             /* If we just unchecked milestone and group is still checked */
             if (className === "toggle_visibility_mile" && document.getElementById("group").checked){
                 let related_fields_group = document.getElementsByClassName("toggle_visibility_group");
                 let i;
                 for(i = 0; i < related_fields_group.length; i++){
-                    related_fields_group[i].style.visibility = "hidden";
+                    related_fields_group[i].style.display = "none";
                 }
             }
         }
@@ -1153,20 +1205,21 @@ window.onload = function () {
         return endDateString;	
     }
 
-    /* ------------------------------------------------------------------------ *\
-        Algorithm that finds the proper spot for task in already sorted array
-    \* ------------------------------------------------------------------------ */
-    oJobSchEd.oModTask.insertTask = function (taskIndex){
+    /* ------------------------------------------------------------------------------------- *\
+        Algorithm that finds the proper spot for task in already sorted array and inserts it
+        It also accounts for when a  parent task changes then all of it's kids must follow
+    \* ------------------------------------------------------------------------------------- */
+    oJobSchEd.oModTask.insertTask = function (taskIndex, intParentOld){                      // intParentOld may be null             //@TODO: only move tasks if parent changes 
         let oP = this.oParent;
         let oNewTask = oP.oNewTask;
         let len = oP.arrTasks.length;
         let i = 0;
         let stack = []; // Stack is used to keep track of the parent of task i and it's grad-parent(s)
         let task_prev, task_curr, task_next;
-
-        /* If array is empty or task doesn't have a parent */
-        if((oP.arrTasks === false) || !(oNewTask.intParent)){
-            if(taskIndex){
+        
+        /* If array is empty or task didn't change parents */
+        if(oP.arrTasks.length === 0 || oNewTask.intParent === intParentOld){
+            if(!(isNaN(taskIndex)) && taskIndex != null) {
                 oP.arrTasks.splice(taskIndex, 0, oNewTask);
             }
             else{
@@ -1185,7 +1238,7 @@ window.onload = function () {
             task_next = oP.arrTasks[i+1];
             
                 
-            /* if it's the last task OR (previous task is not the parent AND (Previous task doesn't have the same parent OR previous task is the desired parent)) */
+            /* If it's the last task OR (previous task is not the parent) */
             if (!(task_next)  ||  ((task_prev && task_prev.intId != task_curr.intParent)) ) { 
                 
                 /* Keep removing from stack until either (the last element is the parent of current task or stack is empty) */
@@ -1218,6 +1271,23 @@ window.onload = function () {
         }
     }
 
+    /* ------------------------------------------------------------------------ *\
+        If parent task changes it's parent then all the children follow
+    \* ------------------------------------------------------------------------ */
+    oJobSchEd.oModTask.correctChildren = function() {
+        
+    }
+    
+    
+    /* ------------------------------------------------------------------------ *\
+        Changes the value of color field to default on button press
+    \* ------------------------------------------------------------------------ */
+    oJobSchEd.oModTask.makeDefaultColor = function() {
+        $("#input_color")[0].value = oJobSchEd.conf.defaultColor;
+        $("#input_color")[0].jscolor.fromString($("#input_color")[0].value)         // update the color immediately
+        oJobSchEd.oNewTask.strColor = $("#input_color")[0].value; 
+    }
+    
     
     /* ------------------------------------------------------------------------ *\
         Escapes the strings with proper sequences
@@ -1234,6 +1304,7 @@ window.onload = function () {
                 return ''
             }
     };
+    
 
 
 
@@ -1360,6 +1431,11 @@ window.onload = function () {
 
     oJobSchEd.oListAct.show = function ()
     {
+        let indentLevel = 0;
+        let marginSize = 20;
+        let prevParent = null;
+        let listStyletype = 'inherit';
+        
         let oP = this.oParent;
         let strList = '<h2>'+ 'Tasks' +'</h2>';
         strList += '<ul style="text-align:left">';
@@ -1371,22 +1447,34 @@ window.onload = function () {
             {
                 continue;
             }
+            
+            /* Check if it is a sub task and increse indentation level, 
+                keep track of previious parent to avoid indentation of sibling tasks*/
+            if (typeof(oA.intParent) === "number" && oA.intParent !== prevParent) {
+                /* Increase indent level and reassign prev parent to current one */
+                indentLevel++;
+                prevParent = oA.intParent;
+                listStyletype = 'none';
+            }
+            else if (typeof(oA.intParent) !== "number") {
+                indentLevel = 0;
+                prevParent = null;
+                listStyletype = 'inherit';
+            }
+            
             strList += ''
+                //+'<li style="margin-left:'+ indentLevel * marginSize +'px; list-style:'+ listStyletype +'";>'
                 +'<li>'
                     +'<a href="javascript:oJobSchEd.oModTask.showEdit('+oA.intId.toString()+')" title="'
                             +this.oParent.lang["title - edit"]
                         +'">'
                         +oA.strName
-                        +' '
-                        +'<img src="'+this.oParent.conf['img - edit']+'" alt=" " />'
                     +'</a>'
                     +' '
                     +'<a href="javascript:oJobSchEd.oModTask.showDel('+oA.intId.toString()+')" title="'
                             +this.oParent.lang["title - del"]
                         +'">'
-                        +'<img src="'+this.oParent.conf['img - del']+'" alt="'
-                            +this.oParent.lang['alt - del']
-                        +'" />'
+                        +'<img src="'+this.oParent.conf['img - del']+'" alt="" />'
                     +'</a>'
                 +'</li>'
             ;
@@ -1523,7 +1611,6 @@ window.onload = function () {
                 let iTaskName = this.arrTasks[i].strName;
                 if (iTaskName.replace(/"/g, '') === openTask){
                     taskRequested = this.arrTasks[i];
-                    debugger;
                     break;
                 }
             }

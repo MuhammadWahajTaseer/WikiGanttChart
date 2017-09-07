@@ -85,10 +85,13 @@ function efJobSchEdSetup($wgOut)
 	// Note! This name should be the same as in other extension
 	//! @todo Make this optional
 	#$wgOut->addHeadItem('sftJSmsg' , Html::linkedScript( efJobSchEdgetCSSJSLink("lib/sftJSmsg.js") ) );
+	#$wgOut->addScriptFile(efJobSchEdgetCSSJSLink("lib/jquery-3.2.1.min.js"));
+	#$wgOut->addScriptFile(efJobSchEdgetCSSJSLink("lib/jquery-ui.min.js"));
 	$wgOut->addScriptFile(efJobSchEdgetCSSJSLink("lib/sftJSmsg.js"));
 	$wgOut->addScriptFile(efJobSchEdgetCSSJSLink("lib/node_modules/moment/moment.js"));
-	
 	$wgOut->addScriptFile(efJobSchEdgetCSSJSLink("lib/node_modules/moment-business-days/index.js"));
+	$wgOut->addScriptFile(efJobSchEdgetCSSJSLink("lib/jscolor.js"));
+	#$wgOut->addScriptFile(efJobSchEdgetCSSJSLink("lib/dist/js/bootstrap-colorpicker.js"));
 
 
 	// Note! This name should be the same as in JSWikiGantt extension

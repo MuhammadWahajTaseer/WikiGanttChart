@@ -142,7 +142,6 @@ JSGantt.isIE = function () {
 
 JSGantt.TaskItem = function(pID, pName, pStart, pEnd, pColor, pLink, pMile, pRes, pComp, pGroup, pParent, pOpen, pDepend, pCaption)
 {
-    console.log(pName);
 	var vID    = pID;
 	var vName  = pName;
 	var vStart = new Date();	
@@ -220,11 +219,11 @@ JSGantt.TaskItem = function(pID, pName, pStart, pEnd, pColor, pLink, pMile, pRes
 		{
 			tmpPer =  Math.ceil((this.getEnd() - this.getStart()) /  (24 * 60 * 60 * 1000) + 1);
 			if(tmpPer == 1) 
-				vDuration = '1 dzień';
+				vDuration = '1 day';
 			else if (tmpPer%10!=1 && tmpPer%10 < 5)
-				vDuration = tmpPer + ' dni';
+				vDuration = tmpPer + ' days';
 			else
-				vDuration = tmpPer + ' dni';
+				vDuration = tmpPer + ' days';
 		}
 
 		//else if(vFormat == 'week') {
@@ -794,12 +793,10 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 				if(vFormat == 'day')
 				{
 					vRightTable += '<td class=gdatehead align=center colspan=7>'
-						+ JSGantt.formatDateStr(vTmpDate, vDateDisplayFormatCaptions[vFormat].from)
-						//+ JSGantt.formatDateStr(vTmpDate,vDateDisplayFormat.substring(0,5)) + ' - '
-						//+ "FIXME" + ' - '
-					;
-					vTmpDate.setDate(vTmpDate.getDate()+6);
-					vRightTable += JSGantt.formatDateStr(vTmpDate, vDateDisplayFormatCaptions[vFormat].to) + '</td>';
+						+ Date.monthNames[vTmpDate.getMonth()] + ' ' + (vTmpDate.getYear()+1900)  // Just shows month and year for every week 
+                        + '</td>';
+                        
+                    vTmpDate.setDate(vTmpDate.getDate()+6);                                       // Previos view of dates
 					vTmpDate.setDate(vTmpDate.getDate()+1);
 				}
 				else if(vFormat == 'week')
@@ -944,22 +941,22 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 						vWeekdayColor = "ccccff";
 					else
 						vWeekdayColor = "ffffff";
-
+                    
 					if(vNxtDate <= vMaxDate)
 					{
-						vDateRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center width:'+vColWidth+'px><div style="width: '+vColWidth+'px">' 
+						vDateRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center width='+vColWidth+'px><div style="width: '+vColWidth+'px">' 
 							+ JSGantt.formatDateStr(vTmpDate, vDateDisplayFormatCaptions[vFormat].lower)  + '</div></td>';
 						if( vCurrDate >= vTmpDate && vCurrDate < vNxtDate ) 
-							vItemRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center><div style="width: '+vColWidth+'px">&nbsp&nbsp</div></td>';
+							vItemRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center><div style="width:'+vColWidth+'px">&nbsp&nbsp</div></td>';
 						else
 							vItemRowStr += '<td class="ghead" align=center><div style="width: '+vColWidth+'px">&nbsp&nbsp</div></td>';
 					}
 					else
 					{
-						vDateRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center width:'+vColWidth+'px><div style="width: '+vColWidth+'px">' + 
+						vDateRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center width='+vColWidth+'px><div style="width: '+vColWidth+'px">' + 
 							JSGantt.formatDateStr(vTmpDate, vDateDisplayFormatCaptions[vFormat].lower) + '</div></td>';
 						if( vCurrDate >= vTmpDate && vCurrDate < vNxtDate ) 
-							vItemRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center><div style="width: '+vColWidth+'px">&nbsp&nbsp</div></td>';
+							vItemRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center><div style="width:'+vColWidth+'px">&nbsp&nbsp</div></td>';
 						else
 							vItemRowStr += '<td class="ghead" align=center><div style="width: '+vColWidth+'px">&nbsp&nbsp</div></td>';
 					}
@@ -1073,13 +1070,13 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 					vTaskRight = 1
 
 					vRightTable +=
-						'<div id=bardiv_' + vID + ' style="position:absolute; top:0px; left:' + Math.ceil((vTaskLeft * (vDayWidth) - 2)) + 'px; height: 18px; width:15px; overflow:hidden;">' +
-						'  <div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" style="position:relative;left:3px; height: 16px; width:12px; overflow:hidden; cursor: pointer;" onclick=JSGantt.taskLink("' + name + '");>';
+						'<div id=bardiv_' + vID + ' style="position:absolute; top:0px; left:' + Math.ceil((vTaskLeft * (vDayWidth) - 2)) + 'px; height: 18px; width:16px; overflow:hidden;">' +
+						'  <div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" style="position:relative;left:2px; height: 20px; width:16px; overflow:hidden; cursor: pointer; font-size:16px;" onclick=JSGantt.taskLink("' + name + '");>';
 
 					if(vTaskList[i].getCompVal() < 100)
-						vRightTable += '&loz;</div>' ;
+						vRightTable += '&#x2606;</div>' ;
 					else
-						vRightTable += '&diams;</div>' ;
+						vRightTable += '&#x2605;</div>' ;
 
 					if( oJSGant.getCaptionType() )
 					{
