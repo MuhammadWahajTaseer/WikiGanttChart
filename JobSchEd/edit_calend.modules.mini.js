@@ -891,7 +891,13 @@ window.onload = function () {
         oP.arrTasks.splice(taskIndex, 1);
 
         /* Add in edited task */
-        this.insertTask(taskIndex, intParentOld);
+        let movingChildrenInfo = this.insertTask(taskIndex, intParentOld);
+        
+        /* Move all its children with it*/
+        if (movingChildrenInfo) {
+            this.moveChildren(movingChildrenInfo.startIndex, movingChildrenInfo.endIndex, movingChildrenInfo.parentNewIndex);
+        }
+        
         oP.oNewTask = null;
 
         this.submitCommon();
@@ -907,10 +913,10 @@ window.onload = function () {
         //console.log(oP.oNewTask);
 
         /* Parse all integers */    
-        task.intComp = (!isNaN(task.intComp) && (task.intComp != null)) ? (parseInt(task.intComp))       : NaN;
-        task.intParent = (!isNaN(task.intParent) && (task.intParent != null)) ? (parseInt(task.intParent))     : NaN;
-        task.intDepend = (!isNaN(task.intDepend) && (task.intDepend != null)) ? (parseInt(task.intDepend))     : NaN;
-        task.intDur = (!isNaN(task.intDur) && (task.intDur != null)) ? (parseInt(task.intDur))      : NaN;
+        task.intComp = (!isNaN(task.intComp) && (task.intComp != null)) ? (parseInt(task.intComp))              : NaN;
+        task.intParent = (!isNaN(task.intParent) && (task.intParent != null)) ? (parseInt(task.intParent))      : NaN;
+        task.intDepend = (!isNaN(task.intDepend) && (task.intDepend != null)) ? (parseInt(task.intDepend))      : NaN;
+        task.intDur = (!isNaN(task.intDur) && (task.intDur != null)) ? (parseInt(task.intDur))                  : NaN;
         
         /* Check for empty string for name */
         if (!task.strName) {
@@ -1103,6 +1109,7 @@ window.onload = function () {
                 , className: "input_color toggle_visibility_group toggle_visibility_mile"
                 , inputClass: "jscolor"
                 , id: "input_color"},
+            
             {type: 'default_color_inputs'
                 , className: "toggle_visibility_group toggle_visibility_mile" }
         ];
@@ -1226,9 +1233,12 @@ window.onload = function () {
                 oP.arrTasks.push(oNewTask);
             }
             oP.stack = null;
-            return true;
+            return null;
         }
-
+        
+        let lastChild = this.getLastChild(taskIndex, oNewTask.intId);
+        console.log(lastChild);
+        
         /* Array is atleast 1 item long and new task has a parent*/
         /* Iterate through the tasks  */
         while (i < len) {
@@ -1242,13 +1252,18 @@ window.onload = function () {
             if (!(task_next)  ||  ((task_prev && task_prev.intId != task_curr.intParent)) ) { 
                 
                 /* Keep removing from stack until either (the last element is the parent of current task or stack is empty) */
-                while (stack.last() != task_curr.intParent) {
+                while (stack.last() != task_curr.intParent) {                                        
                     let item = stack.pop();
                     
                     /* If we are finished with the subtasks for the desired parent then insert here */
-                    if (item === oNewTask.intParent) {                       
+                    if (item === oNewTask.intParent) {
                         oP.arrTasks.splice(i, 0, oNewTask);
-                        return;
+                        
+                        if (i <= lastChild) {
+                            lastChild++;    
+                        }
+                        
+                        return {startIndex: taskIndex, endIndex: lastChild, parentNewIndex: i};
                     }
                     
                     /* If stack is empty then desired parent wasn't in there and we can move on */
@@ -1258,7 +1273,7 @@ window.onload = function () {
                 }
                 if (!(task_next)) {
                     oP.arrTasks.push(oNewTask);
-                    return;
+                    return {startIndex: taskIndex, endIndex: lastChild, parentNewIndex: oP.arrTasks.length};
                 }
             }
             
@@ -1272,12 +1287,80 @@ window.onload = function () {
     }
 
     /* ------------------------------------------------------------------------ *\
-        If parent task changes it's parent then all the children follow
+        Returns the last child index for a task
     \* ------------------------------------------------------------------------ */
-    oJobSchEd.oModTask.correctChildren = function() {
+    oJobSchEd.oModTask.getLastChild = function(whereTaskWas, parentId) {
+        let oP = this.oParent;
+        let oNewTask = oP.oNewTask;
+        let len = oP.arrTasks.length;
+        let i = whereTaskWas;
+        let stack = [parentId]; // Stack is used to keep track of the parent of task i and it's grad-parent(s)
+        let task_prev, task_curr, task_next;
         
+        debugger;
+        if (whereTaskWas === len || oP.arrTasks[whereTaskWas].intParent !== parentId) {
+            return null;
+        }
+        
+        /* Array is atleast 1 item long and new task has a parent*/
+        while (i < len) {
+            
+            task_prev = oP.arrTasks[i-1];
+            task_curr = oP.arrTasks[i];
+            task_next = oP.arrTasks[i+1];
+            
+            /* If it's the last task OR (previous task is not the parent) */
+            if (!(task_next)  ||  ((task_prev && task_prev.intId != task_curr.intParent)) ) { 
+                
+                /* Keep removing from stack until either (the last element is the parent of current task or stack is empty) */
+                while (stack.last() != task_curr.intParent) {                                        
+                    let item = stack.pop();
+                    
+                    /* If we are finished with the subtasks for the desired parent then insert here */
+                    if (item === parentId) {
+                        if (oP.arrTasks[i-1].intId !== parentId) {
+                            return i-1;
+                        }
+                        return null;
+                    }
+                    
+                    /* If stack is empty then desired parent wasn't in there and we can move on */
+                    if (stack.length === 0) {
+                        break;
+                    }
+                }
+                if (!(task_next)) {
+                    return null;
+                }
+            }
+            
+            /* If grouping task then add to stack */
+            if (task_curr.boolGroup) {
+                stack.push(task_curr.intId);
+            }
+
+            i++;
+        }
+        return null;
     }
     
+    /* ------------------------------------------------------------------------ *\
+        Moves the children to where the parent moved
+    \* ------------------------------------------------------------------------ */
+    oJobSchEd.oModTask.MoveChildren = function(startingAt, EndingAt, parentId) {
+        let oP = this.oParent;
+        let arr = oP.arrTasks;
+        let diff = EndingAt - startingAt;
+        let i = 0;
+        
+        arr.splice(startingAt, diff);
+        for (1; i < arr.length; i++) {
+            if arr[i].intid === parentId{
+                arr.splice(i, 0, )
+            }
+        }
+        
+    }
     
     /* ------------------------------------------------------------------------ *\
         Changes the value of color field to default on button press
