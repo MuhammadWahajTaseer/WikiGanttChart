@@ -1297,7 +1297,7 @@ window.onload = function () {
         let oNewTask = oP.oNewTask;
         let len = oP.arrTasks.length;
         let i = whereTaskWas;
-        let stack = [parentId]; // Stack is used to keep track of the parent of task i and it's grad-parent(s)
+        let stack = [parentId]; // Stack is used to keep track of the parent of task i and it's grand-parent(s)
         let task_prev, task_curr, task_next;
         
         if (whereTaskWas >= len || !oP.arrTasks[whereTaskWas] || oP.arrTasks[whereTaskWas].intParent !== parentId) {
@@ -1521,51 +1521,68 @@ window.onload = function () {
     oJobSchEd.oListAct.show = function () {
         let indentLevel = 0;
         let marginSize = 20;
-        let prevParent = null;
         let listStyletype = 'inherit';
         let stack = [];
+        let i = 0;
         
         let oP = this.oParent;
         let strList = '<h2>'+ 'Tasks' +'</h2>';
         strList += '<ul style="text-align:left">';
 
-        for (let i=0; i<oP.arrTasks.length; i++) {
-            let oA = oP.arrTasks[i]
-            if (typeof(oA)=='undefined')
-            {
+        while (i<oP.arrTasks.length) {
+            
+            task_prev = oP.arrTasks[i-1];
+            task_curr = oP.arrTasks[i];
+            task_next = oP.arrTasks[i+1];
+            
+            if (typeof(task_curr)=='undefined'){
                 continue;
             }
-            
-            /* Check if it is a sub task and increse indentation level, 
-                keep track of previious parent to avoid indentation of sibling tasks*/
-            if (typeof(oA.intParent) === "number" && oA.intParent !== prevParent) {
+
+            /* If it's not a sub child then decrement indetation until parent is found */
+            if (task_prev && task_prev.intId != task_curr.intParent) { 
                 /* Increase indent level and reassign prev parent to current one */
+                while (stack.last() != task_curr.intParent){
+                    //debugger;
+                    let parentFromStack = stack.pop();
+
+                    indentLevel--;
+                    
+                    if (stack.length === 0) {
+                        indentLevel = 0;
+                        listStyletype = 'inherit';
+                        break;
+                    }
+                }
+            }
+            else if (task_curr.intParent) {
                 indentLevel++;
-                prevParent = oA.intParent;
+            }
+            if (task_next && task_next.intParent === task_curr.intId){
+                stack.push(task_curr.intId);
+            }
+            if (typeof(task_curr.intParent) === "number" ) {
                 listStyletype = 'none';
-            }
-            else if (typeof(oA.intParent) !== "number") {
-                indentLevel = 0;
-                prevParent = null;
-                listStyletype = 'inherit';
-            }
+            }    
             
             strList += ''
-                //+'<li style="margin-left:'+ indentLevel * marginSize +'px; list-style:'+ listStyletype +'";>'
-                +'<li>'
-                    +'<a href="javascript:oJobSchEd.oModTask.showEdit('+oA.intId.toString()+')" title="'
+                +'<li style="margin-left:'+ indentLevel * marginSize +'px; list-style:'+ listStyletype +'";>'
+                //+'<li>'
+                    +'<a href="javascript:oJobSchEd.oModTask.showEdit('+task_curr.intId.toString()+')" title="'
                             +this.oParent.lang["title - edit"]
                         +'">'
-                        +oA.strName
+                        +task_curr.strName
                     +'</a>'
                     +' '
-                    +'<a href="javascript:oJobSchEd.oModTask.showDel('+oA.intId.toString()+')" title="'
+                    +'<a href="javascript:oJobSchEd.oModTask.showDel('+task_curr.intId.toString()+')" title="'
                             +this.oParent.lang["title - del"]
                         +'">'
                         +'<img src="'+this.oParent.conf['img - del']+'" alt="" />'
                     +'</a>'
-                +'</li>'
-            ;
+                +'</li>';
+            
+            i++;
+            console.log(i);
         }
         strList += ''
             +'<li>'
