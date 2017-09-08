@@ -1,5 +1,6 @@
 window.onload = function () {
 
+    //var oJobSchEd; if(!oJobSchEd) oJobSchEd = {};
 
     Array.prototype.last = function () {
         return this[this.length - 1];
@@ -7,7 +8,6 @@ window.onload = function () {
     Array.prototype.secondLast = function () {
         return this[this.length - 2];
     };
-    //window.oJobSchEd = {};
     window.oJobSchEd = {};
     oJobSchEd.ver = oJobSchEd.version = '1.0.0';
     oJobSchEd.conf = {"" : ""
@@ -1511,7 +1511,7 @@ window.onload = function () {
     /* ------------------------------------------------------------------------ *\
           List Activities object that is used to show tasks
     \* ------------------------------------------------------------------------ */
-    oJobSchEd.oListAct = new Object();
+    oJobSchEd.oListAct = {}
 
 
     /* ------------------------------------------------------------------------ *\
@@ -1567,7 +1567,6 @@ window.onload = function () {
             
             strList += ''
                 +'<li style="margin-left:'+ indentLevel * marginSize +'px; list-style:'+ listStyletype +'";>'
-                //+'<li>'
                     +'<a href="javascript:oJobSchEd.oModTask.showEdit('+task_curr.intId.toString()+')" title="'
                             +this.oParent.lang["title - edit"]
                         +'">'
@@ -1582,7 +1581,6 @@ window.onload = function () {
                 +'</li>';
             
             i++;
-            console.log(i);
         }
         strList += ''
             +'<li>'
@@ -1713,7 +1711,11 @@ window.onload = function () {
             let i = 0, taskRequested;
             for (i; i < this.arrTasks.length; i++) {
                 let iTaskName = this.arrTasks[i].strName;
-                if (iTaskName.replace(/"/g, '') === openTask){
+                iTaskName = iTaskName.replace(/"/g, '');
+                openTask = openTask.replace(/%27/g, "'")
+                openTask = openTask.replace(/%3C/g, "<")
+                openTask = openTask.replace(/%3E/g, ">")
+                if (iTaskName === openTask){
                     taskRequested = this.arrTasks[i];
                     break;
                 }
