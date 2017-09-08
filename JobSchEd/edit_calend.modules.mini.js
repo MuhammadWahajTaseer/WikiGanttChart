@@ -1247,9 +1247,8 @@ window.onload = function () {
             task_curr = oP.arrTasks[i];
             task_next = oP.arrTasks[i+1];
             
-                
             /* If it's the last task OR (previous task is not the parent) */
-            if (!(task_next)  ||  ((task_prev && task_prev.intId != task_curr.intParent)) ) { 
+            if (!(task_next) || ((task_prev && task_prev.intId != task_curr.intParent)) ) { 
                 
                 /* Keep removing from stack until either (the last element is the parent of current task or stack is empty) */
                 while (stack.last() != task_curr.intParent) {                                        
@@ -1261,6 +1260,10 @@ window.onload = function () {
                         
                         if (i <= lastChild) {
                             lastChild++;    
+                        }
+                        
+                        if (i <= taskIndex) {
+                            taskIndex++;
                         }
                         
                         return {startIndex: taskIndex, endIndex: lastChild, parentNewIndex: i};
@@ -1297,8 +1300,7 @@ window.onload = function () {
         let stack = [parentId]; // Stack is used to keep track of the parent of task i and it's grad-parent(s)
         let task_prev, task_curr, task_next;
         
-        debugger;
-        if (whereTaskWas === len || oP.arrTasks[whereTaskWas].intParent !== parentId) {
+        if (whereTaskWas >= len || !oP.arrTasks[whereTaskWas] || oP.arrTasks[whereTaskWas].intParent !== parentId) {
             return null;
         }
         
@@ -1330,7 +1332,7 @@ window.onload = function () {
                     }
                 }
                 if (!(task_next)) {
-                    return null;
+                    return i;
                 }
             }
             
@@ -1347,19 +1349,23 @@ window.onload = function () {
     /* ------------------------------------------------------------------------ *\
         Moves the children to where the parent moved
     \* ------------------------------------------------------------------------ */
-    oJobSchEd.oModTask.MoveChildren = function(startingAt, EndingAt, parentId) {
+    oJobSchEd.oModTask.moveChildren = function(startingAt, EndingAt, parentIndex) {
         let oP = this.oParent;
         let arr = oP.arrTasks;
         let diff = EndingAt - startingAt;
         let i = 0;
         
-        arr.splice(startingAt, diff);
-        for (1; i < arr.length; i++) {
-            if arr[i].intid === parentId{
-                arr.splice(i, 0, )
-            }
-        }
+        let children = arr.splice(startingAt, diff+1);
+        console.log(children)
         
+        if (parentIndex > startingAt) {
+            parentIndex-=(diff+1);    
+        }
+        arr.splice(parentIndex+1, 0, children)  // since children is also an array we need to flatten the tasks array
+        arr = arr.reduce(function(a,b) {
+                            return a.concat(b);           
+                        }, []);
+        oP.arrTasks = arr;        
     }
     
     /* ------------------------------------------------------------------------ *\
@@ -1512,19 +1518,18 @@ window.onload = function () {
          Displays the list of tasks with options to edit or delete
     \* ------------------------------------------------------------------------ */
 
-    oJobSchEd.oListAct.show = function ()
-    {
+    oJobSchEd.oListAct.show = function () {
         let indentLevel = 0;
         let marginSize = 20;
         let prevParent = null;
         let listStyletype = 'inherit';
+        let stack = [];
         
         let oP = this.oParent;
         let strList = '<h2>'+ 'Tasks' +'</h2>';
         strList += '<ul style="text-align:left">';
 
-        for (let i=0; i<oP.arrTasks.length; i++)
-        {
+        for (let i=0; i<oP.arrTasks.length; i++) {
             let oA = oP.arrTasks[i]
             if (typeof(oA)=='undefined')
             {
@@ -1569,8 +1574,7 @@ window.onload = function () {
                         +'">'
                     +this.oParent.lang['label - new activity']
                 +'</a>'
-            +'</li>'
-        ;
+            +'</li>';
         strList += '</ul>';
 
 
