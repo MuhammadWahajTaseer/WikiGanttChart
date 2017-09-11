@@ -1,6 +1,7 @@
 window.onload = function () {
 
     //var oJobSchEd; if(!oJobSchEd) oJobSchEd = {};
+    window.oJobSchEd = {};
 
     Array.prototype.last = function () {
         return this[this.length - 1];
@@ -8,7 +9,6 @@ window.onload = function () {
     Array.prototype.secondLast = function () {
         return this[this.length - 2];
     };
-    window.oJobSchEd = {};
     oJobSchEd.ver = oJobSchEd.version = '1.0.0';
     oJobSchEd.conf = {"" : ""
         , strFallbackLang : 'en'
@@ -29,7 +29,7 @@ window.onload = function () {
 
     oJobSchEd.lang = {"":""
         ,'en' : {"":""
-            ,"button label" : "Edit calendar"
+            ,"button label" : "Edit Gantt Chart"
             ,"gantt not found"                          : "There seems to be no calendar here. Add a &lt;jsgantt autolink='0'&gt;&lt;/jsgantt&gt; tag, if you want to start."
             ,"gantt parse error - general"              : "Error parsing the gantt diagram code. This diagram is probably not a calendar."
             ,"gantt parse error - no id and name at nr" : "Error parsing code at task number %i%. This calendar is either weird or broken."
@@ -108,7 +108,7 @@ window.onload = function () {
         nel.href = "javascript:oJobSchEd.startEditor()";
         nel.style.cssText = "float:right";
         nel.appendChild(document.createTextNode(this.lang["button label"]));
-        elTB.appendChild(nel);
+        elTB.insertBefore(nel, elTB.firstChild);
     }
     // EOC@line#215
     oJobSchEd.startEditor = function ()
@@ -125,14 +125,13 @@ window.onload = function () {
             return;
         }
 
-
-        if (this.conf.isAutoAddLogged && typeof(mw.config.values.wgUserName)=='string' && mw.config.values.wgUserName.length)
-        {
-            if (this.firstIdOfPersonByName(mw.config.values.wgUserName)===false)
-            {
-                this.addPerson(mw.config.values.wgUserName);
-            }
-        }
+        //if (this.conf.isAutoAddLogged && typeof(mw.config.values.wgUserName)=='string' && mw.config.values.wgUserName.length)
+        //{
+            //if (this.firstIdOfPersonByName(mw.config.values.wgUserName)===false)
+            //{
+            //    this.addPerson(mw.config.values.wgUserName);
+            //}
+        //}
 
         // Main editor window: list of tasks
         this.oListAct.show();  
@@ -386,7 +385,7 @@ window.onload = function () {
                 break;
                 case 'default_color_inputs':
                     strRet += '<p class="'+ oF.className +'" style="margin-left:20px;">'
-                    + 'Save as Default: <input id="default_color" type="checkbox" onclick=oJobSchEd.oModTask.toggleChecked("default_color")"/>'
+                    + 'Save as Default: <input id="default_color" type="checkbox" onclick=oJobSchEd.oModTask.toggleChecked("default_color")>'
                     +  '<button style="margin-left:52px;" type="button" onclick="oJobSchEd.oModTask.makeDefaultColor()">Make Default!</button>';
                     + '</p>'
                     
@@ -422,8 +421,8 @@ window.onload = function () {
 
     oJobSchEd.parse = function(strWikicode)
     {
-        var docXML = this.parseToXMLDoc(strWikicode);
-        var elsTasks = docXML.getElementsByTagName('task');
+        let docXML = this.parseToXMLDoc(strWikicode);
+        let elsTasks = docXML.getElementsByTagName('task');
         this.arrPersons = new Array();
 
         this.arrTasks = [];
@@ -437,6 +436,14 @@ window.onload = function () {
             }
             this.arrTasks.push(oTask);
         }
+        
+        /* Parse the preferences if any: default color */
+        try{
+            let prefs = docXML.getElementsByTagName('prefs')[0];
+            let defColor = prefs.getElementsByTagName('defcolor')[0].textContent;
+            this.conf.defaultColor = defColor
+        }catch (e) {}
+        
         return true;
     }
 
@@ -453,6 +460,9 @@ window.onload = function () {
         {
             oTask.intId = parseInt(nodeTask.getElementsByTagName('pID')[0].textContent);
             oTask.strName = nodeTask.getElementsByTagName('pName')[0].textContent;
+            
+            /* Replace double with single quote otherwise it breaks the gadget sftJSmsg.js */
+            oTask.strName = oTask.strName.replace(/"/g, "'");
 
             /* Trying to get a unique ID */
             if (oTask.intId >= oJobSchEd.nextId){
@@ -555,13 +565,19 @@ window.onload = function () {
     \* ------------------------------------------------------------------------ */
     oJobSchEd.buildWikicode = function ()
     {
-        var strWikicode = '';
+        let strWikicode = '';
 
         for (var i=0; i<this.arrTasks.length; i++){
             strWikicode += this.buildTaskcode(this.arrTasks[i]);
         }
+        
+        //Add an XML tag for default color preferences
+        strWikicode += '\n'
+                     + '<prefs>\n'
+                         + '\t<defcolor>' + oJobSchEd.conf.defaultColor + '</defcolor>\n'
+                     + '</prefs>\n';
 
-        return strWikicode + "\n";
+        return strWikicode;
     }
 
     /* ------------------------------------------------------------------------ *\
@@ -571,6 +587,7 @@ window.onload = function () {
     {
         let strWikiCode = '';
 
+        let pName = (oTask.strName) 	? '\n\t<pName>'+this.encodeHTML(oTask.strName)+'</pName>' : '';
         let pDateStart = (oTask.strDateStart) 	? '\n\t<pStart>'+oTask.strDateStart+'</pStart>' : '';
         let pDateEnd = (oTask.strDateEnd) 	? '\n\t<pEnd>'+oTask.strDateEnd+'</pEnd>' : '';
         let pDur = (oTask.intDur)		? '\n\t<pDur>'+oTask.intDur+'</pDur>' : '';
@@ -585,7 +602,7 @@ window.onload = function () {
         {
             strWikiCode = '\n<task>'
                 +'\n\t<pID>'+oTask.intId+'</pID>'
-                +'\n\t<pName>'+this.encodeHTML(oTask.strName)+'</pName>'
+                + pName
                 +'\n\t<pColor>'+oTask.strColor+'</pColor>'
                 + pDateStart
                 + pDateEnd
@@ -839,9 +856,6 @@ window.onload = function () {
         //console.log('old')
         //console.log(oJobSchEd.oNewTask)
         
-        /* Escape double quotes */
-        this.oParent.oNewTask.strName = this.oParent.oNewTask.strName.replace(/"/g, '\\"');
-        
         let arrFields = this.getArrFields('oJobSchEd.oNewTask');
         let strHTML = this.oParent.createForm(arrFields, this.oParent.lang['header - edit']);
             
@@ -871,9 +885,6 @@ window.onload = function () {
             jscolor.installByClassName("jscolor");
         });
         
-        /* bootstrap-colorpicker activate */
-        //$('#cp1').colorpicker();
-
     }
 
     /* ------------------------------------------------------------------------ *\
@@ -959,9 +970,6 @@ window.onload = function () {
         
         /* Deal with parents */
         task.intParent = (task.intParent) ? task.intParent : null;
-        
-        /* Replace double quotes with single quotes: "" causes issues with sftJSmsg.js */
-        task.strName = task.strName.replace(/"/g, "'");
         
         /* If set default color was checked then change the default color, and uncheck it in conf */
         if (oJobSchEd.conf.defaultChecked) {
@@ -1386,7 +1394,7 @@ window.onload = function () {
                 return st.replace(/&/g, '&amp;')
                .replace(/</g, '&lt;')
                .replace(/>/g, '&gt;')
-               .replace(/"/g, '&quot;')
+               .replace(/"/g, '&apos;')
                .replace(/'/g, '&apos;');
             }
             else {
@@ -1394,113 +1402,6 @@ window.onload = function () {
             }
     };
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    oJobSchEd.oListPersons = new Object();
-    oJobSchEd.oListPersons.show = function ()
-    {
-
-        var strList = '<h2>'+this.oParent.lang["header - persons"]+'</h2>';
-        strList += '<ul style="text-align:left">';
-        for (var i=0; i<this.oParent.arrPersons.length; i++)
-        {
-            var oP = this.oParent.arrPersons[i];
-            strList += ''
-                +'<li>'
-                    +'<a href="javascript:oJobSchEd.oListAct.show('+oP.intId.toString()+')" title="'
-                            +this.oParent.lang["title - list act"]
-                        +'">'
-                        +oP.strName
-                        +' '
-                        +'<img src="'+this.oParent.conf['img - list']+'" alt=" " />'
-                    +'</a>'
-                    +' '
-                    +'<a href="javascript:oJobSchEd.oModPerson.showEdit('+oP.intId.toString()+')" title="'
-                            +this.oParent.lang["title - edit"]
-                        +'">'
-                        +'<img src="'+this.oParent.conf['img - edit']+'" alt="'
-                            +this.oParent.lang['alt - mod']
-                        +'" />'
-                    +'</a>'
-                    +' '
-                    +'<a href="javascript:oJobSchEd.oModPerson.showDel('+oP.intId.toString()+')" title="'
-                            +this.oParent.lang["title - del"]
-                        +'">'
-                        +'<img src="'+this.oParent.conf['img - del']+'" alt="'
-                            +this.oParent.lang['alt - del']
-                        +'" />'
-                    +'</a>'
-                +'</li>'
-            ;
-        }
-        strList += ''
-            +'<li>'
-                +'<a href="javascript:oJobSchEd.oModPerson.showAdd()" title="'
-                            +this.oParent.lang["title - add"]
-                        +'">'
-                    +this.oParent.lang['label - new person']
-                +'</a>'
-            +'</li>'
-        ;
-        strList += '</ul>';
-
-
-        var msg = this.oMsg;
-        msg.show(strList);
-        msg.repositionMsgCenter();
-    }
-    oJobSchEd.oListPersons.refresh = function ()
-    {
-
-        this.oMsg.close();
-        this.show();
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1564,7 +1465,7 @@ window.onload = function () {
             if (typeof(task_curr.intParent) === "number" ) {
                 listStyletype = 'none';
             }    
-            
+
             strList += ''
                 +'<li style="margin-left:'+ indentLevel * marginSize +'px; list-style:'+ listStyletype +'";>'
                     +'<a href="javascript:oJobSchEd.oModTask.showEdit('+task_curr.intId.toString()+')" title="'
@@ -1622,20 +1523,6 @@ window.onload = function () {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /* ------------------------------------------------------------------------ *\
         INIT 	
     \* ------------------------------------------------------------------------ */
@@ -1663,28 +1550,6 @@ window.onload = function () {
         msg.createRegularForm = false;
         this.oModTask.oMsg = msg;
         this.oModTask.oParent = this;
-
-        // Person form
-        var msg = new sftJSmsg();
-        msg.repositionMsgCenter();
-        msg.styleWidth = 500;
-        msg.styleZbase += 30;
-        msg.showCancel = true;
-        msg.autoOKClose = false;
-        msg.createRegularForm = false;
-        this.oModPerson.oMsg = msg;
-        this.oModPerson.oParent = this;
-
-        // Person list
-        var msg = new sftJSmsg();
-        msg.repositionMsgCenter();
-        msg.styleWidth = 300;
-        msg.styleZbase += 10;
-        msg.showCancel = false;
-        msg.lang['OK'] = this.lang["close button label"];
-        msg.createRegularForm = false;
-        this.oListPersons.oMsg = msg;
-        this.oListPersons.oParent = this;
 
         // Tasks of a person list
         var msg = new sftJSmsg();
@@ -1731,31 +1596,21 @@ window.onload = function () {
         }
     }
 
-
-
     /* ------------------------------------------------------------------------ *\
         Start	
     \* ------------------------------------------------------------------------ */
     if (window.location.href.indexOf('openTask') > -1) {
         let taskName = window.location.href.split('openTask=')[1];
         openTask = taskName.replace(/\+/g, ' ');
-        console.log('Open this task: ' + openTask);
+        //console.log('Open this task: ' + openTask);
         addOnloadHook(function () {oJobSchEd.init()});
         oJobSchEd.init(openTask);
-        
     }
     
     else if (mw.config.values.wgAction=="edit" || mw.config.values.wgAction=="submit") {
     	addOnloadHook(function () {oJobSchEd.init()});
         oJobSchEd.init();
     }
-
-
-
-
-
-
-
 
 
 
