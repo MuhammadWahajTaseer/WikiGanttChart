@@ -690,7 +690,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 				}
 				else
 				{
-					vLeftTable += '<span style="color: #000000; font-weight:bold;">&nbsp&nbsp&nbsp</span>';
+					vLeftTable += '<span style="color: #000000; font-weight:bold;">&nbsp&nbsp</span>';
 				}
 
 //				if (vTaskList[i].getLink().length>0)
@@ -1640,6 +1640,9 @@ JSGantt.taskLink = function(pName)
 
 	//var OpenWindow=window.open(pRef, "newwin", "height="+vHeight+",width="+vWidth);
     //window.attachEvent('onload', oJobSchEd.startEditor());
+    if (oJobSchEd) {
+        oJobSchEd.createOverlay();
+    }
 	var OpenWindow=window.open('/mediawiki/index.php?title='+wgTitle+'&action=edit#openTask='+pName+'', "_self");
     //OpenWindow.focus();
     //$(OpenWindow.document).onload(oJobSchEd.startEditor())

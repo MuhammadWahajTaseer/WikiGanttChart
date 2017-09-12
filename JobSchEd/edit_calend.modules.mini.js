@@ -25,6 +25,7 @@ window.onload = function () {
         ,"img - edit" : ''
         ,"img - list" : 'extensions/JobSchEd/img/list.png' //Icon made by  from www.flaticon.com 
         ,"img - del"  : 'extensions/JobSchEd/img/x.png'
+        ,marginSize : 20
     }
 
     oJobSchEd.lang = {"":""
@@ -862,6 +863,7 @@ window.onload = function () {
 
         let msg = this.oMsg;
         this.oParent.oNewTask.intParent = (this.oParent.oNewTask.intParent) ? this.oParent.oNewTask.intParent : null;
+        msg.saveBtnFunction = 'oJobSchEd.oModTask.saveBtnFunction('+i+', '+ this.oParent.oNewTask.intParent+')';
         msg.show(strHTML, 'oJobSchEd.oModTask.submitEdit('+i+', '+ this.oParent.oNewTask.intParent+')');
         msg.repositionMsgCenter();
 
@@ -990,7 +992,27 @@ window.onload = function () {
         task = null;
         return true;
     }
-
+    
+    /* ------------------------------------------------------------------------ *\
+          	
+    \* ------------------------------------------------------------------------ */
+    oJobSchEd.oModTask.saveBtnFunction = function(taskIndex, intParentOld){
+        
+        // Submit the task
+        this.submitEdit(taskIndex, intParentOld);
+        
+        // Submit the media wiki form
+        $("#editform").submit();
+        
+        //Close forms
+        this.oParent.oListAct.oMsg.close();
+        
+        //Add semi-transparent overlay while page loads
+        this.oParent.createOverlay();
+    
+    
+    }
+    
     /* ------------------------------------------------------------------------ *\
         When user clicks on delete task button  	
     \* ------------------------------------------------------------------------ */
@@ -1421,7 +1443,6 @@ window.onload = function () {
 
     oJobSchEd.oListAct.show = function () {
         let indentLevel = 0;
-        let marginSize = 20;
         let listStyletype = 'inherit';
         let stack = [];
         let i = 0;
@@ -1467,7 +1488,7 @@ window.onload = function () {
             }    
 
             strList += ''
-                +'<li style="margin-left:'+ indentLevel * marginSize +'px; list-style:'+ listStyletype +'";>'
+                +'<li style="margin-left:'+ indentLevel * oP.conf.marginSize +'px; list-style:'+ listStyletype +'";>'
                     +'<a href="javascript:oJobSchEd.oModTask.showEdit('+task_curr.intId.toString()+')" title="'
                             +this.oParent.lang["title - edit"]
                         +'">'
@@ -1503,7 +1524,6 @@ window.onload = function () {
     /* ------------------------------------------------------------------------ *\
         Refresh task list 	
     \* ------------------------------------------------------------------------ */
-
     oJobSchEd.oListAct.refresh = function ()
     {
         this.oMsg.close();
@@ -1513,10 +1533,20 @@ window.onload = function () {
 
 
 
-
-
-
-
+    /* ------------------------------------------------------------------------ *\
+        Greys out page so user doesn't try to interact with it 	
+    \* ------------------------------------------------------------------------ */
+    oJobSchEd.createOverlay = function () {
+        let overlay = document.createElement('div');
+        overlay.style.backgroundColor = '#e9e9e9';
+        //overlay.style.display = 'none';
+        overlay.style.position = 'absolute';
+        overlay.style.top = 0;
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.opacity = '.7';
+        document.body.appendChild(overlay);
+    }
 
 
 
@@ -1546,12 +1576,13 @@ window.onload = function () {
         msg.styleWidth = 1000;
         msg.styleZbase += 30;
         msg.showCancel = true;
+        msg.showSave = true;
         msg.autoOKClose = false;
         msg.createRegularForm = false;
         this.oModTask.oMsg = msg;
         this.oModTask.oParent = this;
 
-        // Tasks of a person list
+        // Tasks List
         var msg = new sftJSmsg();
         msg.repositionMsgCenter();
         msg.styleWidth = 1000;
@@ -1601,6 +1632,7 @@ window.onload = function () {
     \* ------------------------------------------------------------------------ */
     if (window.location.href.indexOf('openTask') > -1) {
         let taskName = window.location.href.split('openTask=')[1];
+        window.history.replaceState({}, "", window.location.href.split('#openTask=')[0]);
         openTask = taskName.replace(/\+/g, ' ');
         //console.log('Open this task: ' + openTask);
         addOnloadHook(function () {oJobSchEd.init()});

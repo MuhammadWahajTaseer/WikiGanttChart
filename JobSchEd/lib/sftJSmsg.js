@@ -17,12 +17,13 @@ function sftJSmsg()
 	\* ------------------------------------------------------------------------ */
 	//
 	// VERSION
-	this.ver = this.version = '0.3.2';
+	this.ver = this.version = '0.3.3';
 	
 	this.msgEls = new Array();
 
 	// settings
 	this.showCancel = false;	// show cancel button
+    this.showSave = false;
 	this.noButtons = false;		// no buttons - NOTE: you'll have to close message for yourself if you use it
 	this.createRegularForm = false;	// instead of a simple popup use popup to submit a form created in it
 	this.RegularForm = {	// settings for a form (if createRegularForm==ture)
@@ -39,7 +40,8 @@ function sftJSmsg()
 	// lang
 	this.lang = {
 		'OK' : 'OK',
-		'Cancel' : 'Cancel'
+		'Cancel' : 'Cancel',
+        'Apply' : 'Save and Exit'
 	};
 
 	// elements on this list will be hidden when the message is displayed
@@ -150,7 +152,7 @@ sftJSmsg.prototype.addMsgContainer = function()
 	var glob = document.body;
 	var nel;
 	nel = document.createElement('div');
-	nel.style.cssText = 'text-align:center;background:white;padding:5px 10px;border:1px solid #CCC;position:absolute;';
+	nel.style.cssText = 'text-align:center;background:white;padding:5px 10px;border:1px solid #CCC;position:absolute;overflow:auto;';
 	// min-height
 	// if (nel.style.maxHeight==undefined)	nel.style.height='300px'; // IE blah...
 	nel.style.display = 'none';
@@ -237,6 +239,7 @@ sftJSmsg.prototype.addMsgButton = function(oBtnParams)
 	nel.setAttribute('type', (typeof(oBtnParams.type)!='string' ? 'button' : oBtnParams.type));
 	nel.setAttribute('name', oBtnParams.name);
 	nel.setAttribute('value', oBtnParams.value);
+	nel.setAttribute('onclick', (oBtnParams.jsOnClick) ? oBtnParams.jsOnClick : '');
 	if (typeof(oBtnParams.style)=='string')
 	{
 		nel.style.cssText = oBtnParams.style;
@@ -269,6 +272,18 @@ sftJSmsg.prototype.addStdButtons = function()
 		});
 		elCancel.onclick = this.close;
 		this.msgBtns.cancel = elCancel;
+	}
+    
+	// Save and exit (if asked for by the user)
+    if (this.showSave)
+	{
+		elSave = this.addMsgButton ({
+			name : 'submit',
+			value: this.lang['Apply'],
+            style: 'margin-left:1em',
+            jsOnClick: (this.saveBtnFunction) ? this.saveBtnFunction : ''
+		});
+		this.msgBtns.save = elSave;
 	}
 }
 
@@ -540,6 +555,7 @@ oJsAlert.init = function ()
 	msg.repositionMsgCenter();
 	msg.styleWidth = 400;
 	msg.showCancel = false;
+	msg.showSave = false;
 	msg.autoOKClose = false;
 	msg.createRegularForm = false;
 	msg.styleZbase = 65000;	// should be above other standard messages
